@@ -6,12 +6,10 @@ import { ContactShadows, Environment } from "@react-three/drei";
 import { ByredoScene } from "./ByredoScene";
 
 interface ProductViewer3DProps {
-  productSlug: string;
   progressRef: React.RefObject<number>;
 }
 
 export function ProductViewer3D({
-  productSlug: _productSlug,
   progressRef,
 }: ProductViewer3DProps): React.JSX.Element {
   return (

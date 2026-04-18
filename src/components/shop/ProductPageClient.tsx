@@ -46,12 +46,10 @@ const STAGE_CONTENTS: StageContent[] = [
 // ─────────────────────────────────────────────
 interface ProductPageClientProps {
   productSlug: string;
-  productName: string;
 }
 
 export function ProductPageClient({
   productSlug,
-  productName: _productName,
 }: ProductPageClientProps): React.JSX.Element {
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -134,10 +132,7 @@ export function ProductPageClient({
 
             {/* ── 좌측: 3D 모델 */}
             <div className="h-full bg-[#ececec]">
-              <ProductViewer3D
-                productSlug={productSlug}
-                progressRef={progressRef}
-              />
+              <ProductViewer3D progressRef={progressRef} />
             </div>
 
             {/* ── 우측: 텍스트 콘텐츠 */}

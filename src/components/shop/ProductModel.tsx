@@ -4,19 +4,11 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
 
-interface ProductModelProps {
-  productSlug: string;
-  onError: () => void;
-}
-
 /**
  * Placeholder geometry — replace with useGLTF() when real .glb assets are provided.
  * Shape mimics a perfume bottle for visual prototyping.
  */
-export function ProductModel({
-  productSlug: _productSlug,
-  onError: _onError,
-}: ProductModelProps): React.JSX.Element {
+export function ProductModel(): React.JSX.Element {
   const meshRef = useRef<Mesh>(null);
 
   useFrame((_, delta) => {

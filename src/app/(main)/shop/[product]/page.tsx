@@ -24,15 +24,5 @@ export async function generateMetadata({
 export default function ProductPage({
   params,
 }: ProductPageProps): React.JSX.Element {
-  const productName = decodeURIComponent(params.product)
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-
-  return (
-    <ProductPageClient
-      productSlug={params.product}
-      productName={productName}
-    />
-  );
+  return <ProductPageClient productSlug={params.product} />;
 }

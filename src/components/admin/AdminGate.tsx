@@ -192,39 +192,41 @@ export function AdminGate(): React.JSX.Element {
     setIsPromoting(true);
     setAdminActionMessage("");
 
-    const { data: profileRows, error: profileLookupError } = await supabase
-      .from("profiles")
-      .select("id,role,email")
-      .ilike("email", normalizedEmail)
-      .limit(1);
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (profileLookupError) {
-      setAdminActionMessage(profileLookupError.message);
+    if (sessionError || !session?.access_token) {
+      setAdminActionMessage(
+        sessionError?.message ?? "A valid session is required to grant admin access."
+      );
       setIsPromoting(false);
       return;
     }
 
-    const targetProfile = Array.isArray(profileRows) ? profileRows[0] : null;
+    const result = await callPromoteAdminByEmail({
+      email: normalizedEmail,
+      accessToken: session.access_token,
+    });
 
-    if (!targetProfile) {
+    if (result === "not_found") {
       setAdminActionMessage("No member profile found for this email.");
       setIsPromoting(false);
       return;
     }
-
-    if (targetProfile.role === "admin") {
+    if (result === "already_admin") {
       setAdminActionMessage("This account already has admin access.");
       setIsPromoting(false);
       return;
     }
-
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ role: "admin" })
-      .eq("id", targetProfile.id);
-
-    if (updateError) {
-      setAdminActionMessage(updateError.message);
+    if (result === "forbidden") {
+      setAdminActionMessage("Only administrators can grant admin access.");
+      setIsPromoting(false);
+      return;
+    }
+    if (result === "error") {
+      setAdminActionMessage("Failed to grant admin access. Please try again.");
       setIsPromoting(false);
       return;
     }
@@ -926,6 +928,45 @@ function isPaymentStatus(value: string | null): value is PaymentRow["status"] {
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+type PromoteAdminResult = "promoted" | "already_admin" | "not_found" | "forbidden" | "error";
+
+interface PromoteAdminParams {
+  email: string;
+  accessToken: string;
+}
+
+async function callPromoteAdminByEmail({
+  email,
+  accessToken,
+}: PromoteAdminParams): Promise<PromoteAdminResult> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return "error";
+  }
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/promote_admin_by_email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ target_email: email }),
+  });
+
+  if (!response.ok) {
+    return response.status === 403 ? "forbidden" : "error";
+  }
+
+  const result: unknown = await response.json();
+  if (result === "promoted" || result === "already_admin" || result === "not_found" || result === "forbidden") {
+    return result;
+  }
+  return "error";
 }
 
 function formatKrw(amount: number): string {
